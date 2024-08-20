@@ -1,0 +1,26 @@
+services:
+  backend:
+    container_name: "transcribe-backend-container-prod"
+    build:
+      context: .
+      dockerfile: ./docker/backend/Dockerfile.Prod
+    working_dir: /app
+    ports:
+      - "8080:8080"
+    environment:
+      TZ: Asia/Tokyo
+    restart: always
+    depends_on:
+      - frontend
+
+  frontend:
+    container_name: "transcribe-frontend-container-prod"
+    build:
+      context: .
+      dockerfile: ./docker/frontend/Dockerfile.Prod
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    restart: always

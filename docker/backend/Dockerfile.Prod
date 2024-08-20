@@ -1,0 +1,23 @@
+# ビルドステージ
+FROM golang:1.20 AS build
+
+WORKDIR /app
+
+COPY ./backend/go.mod ./backend/go.sum /app/
+RUN go mod download
+
+COPY ./backend /app
+
+# 静的リンクでバイナリをビルド
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/main /app/cmd/server/main.go
+
+# ランタイムステージ（軽量なAlpine Linuxを使用）
+FROM alpine:3.18
+
+WORKDIR /app
+
+COPY --from=build /app/main /app/
+
+EXPOSE 8080
+
+CMD ["/app/main"]
