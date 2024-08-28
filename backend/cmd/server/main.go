@@ -1,33 +1,32 @@
 package main
 
 import (
-	"cmTranscribe/internal/app/service"
 	"cmTranscribe/internal/infra/config"
-	"cmTranscribe/internal/infra/external"
-	"cmTranscribe/internal/infra/persistence"
+	"cmTranscribe/internal/infra/container"
 	"cmTranscribe/internal/interface/api"
+	"cmTranscribe/internal/routes"
 	"log"
 	"net/http"
 )
 
 func main() {
-	// 設定の読み込み
-	config.LoadConfig()
 
-	// リポジトリの初期化
-	repo := persistence.NewTranscriptionJobRepository()
+	// DIコンテナの初期化
+	appContainer, err := container.NewAppContainer()
+	if err != nil {
+		log.Fatalf("Failed to initialize app container: %v", err)
+	}
 
-	// Amazon Transcribeサービスの初期化
-	transcribeSvc := external.NewTranscribeService(config.AppConfig.AWSRegion)
+	// APIハンドラの設定（プレゼンテーション層）
+	transcriptionHandler := api.NewTranscriptionJobHandler(appContainer.TranscriptionJobService)
+	customVocabularyHandler := api.NewCustomVocabularyHandler(appContainer.CustomVocabularyService)
 
-	// サービスの初期化
-	transcriptionService := service.NewTranscriptionService(repo, transcribeSvc)
-
-	// APIハンドラの設定
-	transcriptionHandler := api.NewTranscriptionHandler(transcriptionService)
-
-	// ルーティングの設定
-	http.HandleFunc("/api/transcribe", transcriptionHandler.Handle)
+	// ルーターの作成とルーティングの登録
+	router := routes.NewRouter(
+		transcriptionHandler,
+		customVocabularyHandler,
+	)
+	router.RegisterRoutes()
 
 	// サーバーの起動
 	log.Printf("Starting server on :%s...\n", config.AppConfig.Port)
