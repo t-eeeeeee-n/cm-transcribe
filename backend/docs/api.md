@@ -38,7 +38,7 @@ EOF
     - **400 Bad Request**: パラメータが不正または不足している場合。
     - **500 Internal Server Error**: サーバー内部のエラー。
 
-### 2. `/api/custom_vocabulary` [POST]
+### 2. `/api/custom_vocabulary/create` [POST]
 
 - **説明**: カスタムボキャブラリーを作成し、Amazon Transcribeに登録します。送信されたボキャブラリー情報をCSVファイルとして一時的に保存し、そのファイルをS3にアップロードした後、AWS Transcribeに登録します。
 - **リクエストボディ**:
