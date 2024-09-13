@@ -17,19 +17,19 @@ services:
     stdin_open: true
     tty: true
 
-#  frontend:
-#    container_name: "transcribe-frontend-container"
-#    build:
-#      context: .
-#      dockerfile: ./docker/frontend/Dockerfile
-#    working_dir: /app
-#    volumes:
-#      - "./frontend:/app"
-#    ports:
-#      - ${NEXT_PUBLIC_PORT}:${NEXT_PUBLIC_PORT}
-#    tty: true
-#    env_file:
-#      - .env
-#    environment:
-#      - WATCHPACK_POLLING=true
-#    command: ${NEXT_PUBLIC_CMD}
+  frontend:
+    container_name: "transcribe-frontend-container"
+    build:
+      context: .
+      dockerfile: ./docker/frontend/Dockerfile
+    working_dir: /app
+    volumes:
+      - "./frontend:/app"
+    ports:
+      - ${NEXT_PUBLIC_PORT}:${NEXT_PUBLIC_PORT}
+    tty: true
+    env_file:
+      - .env
+    environment:
+      - WATCHPACK_POLLING=true
+    command: ${NEXT_PUBLIC_CMD}

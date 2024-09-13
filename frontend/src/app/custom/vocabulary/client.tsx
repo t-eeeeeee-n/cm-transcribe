@@ -1,80 +1,64 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Box, Button, Container } from '@mui/material';
 import axios from 'axios';
-import VocabularyForm from "@/components/VocabularyForm";
-import PhraseTable from "@/components/PhraseTable";
-import DictionarySettings from "@/components/PhraseTable";
+import { Vocabulary } from "@/types/Vocabulary";
+import { addVocabulary, removeVocabulary, updateVocabulary } from "@/utils/vocabularyUtils";
+import VocabularyLayout from "@/components/VocabularyLayout";
+import { validateForm } from "@/utils/validateForm";  // 共通バリデーション関数をインポート
+import toast from 'react-hot-toast';  // react-hot-toastのインポート
 
 const Client: React.FC = () => {
-    // ボキャブラリー名と言語コードの状態管理
     const [vocabularyName, setVocabularyName] = useState('');
-    const [languageCode, setLanguageCode] = useState('');
+    const [languageCode, setLanguageCode] = useState<string>("ja-JP");
+    const [vocabularies, setVocabularies] = useState<Vocabulary[]>([]);
 
-    // フレーズデータの状態管理
-    const [phrases, setPhrases] = useState([
-        { phrase: '', soundsLike: '', ipa: '', displayAs: '' }
-    ]);
-
-    // フレーズの更新
-    const handlePhraseChange = (index: number, field: keyof typeof phrases[0], value: string) => {
-        const newPhrases = [...phrases];
-        newPhrases[index][field] = value;
-        setPhrases(newPhrases);
+    const handleVocabularyChange = (index: number, field: keyof Vocabulary, value: string) => {
+        setVocabularies(updateVocabulary(vocabularies, index, field, value));
     };
 
-    // フレーズの追加
-    const handleAddPhrase = () => {
-        setPhrases([...phrases, { phrase: '', soundsLike: '', ipa: '', displayAs: '' }]);
+    const handleAddVocabulary = () => {
+        setVocabularies(addVocabulary(vocabularies));
     };
 
-    // フレーズの削除
-    const handleRemovePhrase = (index: number) => {
-        setPhrases(phrases.filter((_, i) => i !== index));
+    const handleRemoveVocabulary = (index: number) => {
+        setVocabularies(removeVocabulary(vocabularies, index));
     };
 
-    // フォームの送信
     const handleSubmit = async () => {
+        // バリデーションチェック
+        if (!validateForm({ vocabularyName, languageCode, vocabularies })) return;
+
         const body = {
             name: vocabularyName,
             language_code: languageCode,
-            vocabularies: phrases
+            vocabularies: vocabularies
         };
 
         try {
-            const response = await axios.post('/api/saveVocabulary', body);  // APIルートにPOST
-            console.log(response.data);
-            alert('保存しました！');
+            await axios.post('/api/custom/vocabulary/create', body);
+            toast.success('保存しました！');  // 成功メッセージ
         } catch (error) {
-            console.error(error);
-            alert('保存に失敗しました。');
+            console.error('保存に失敗しました。', error);
+            toast.error('保存に失敗しました。');  // エラーメッセージ
         }
     };
 
     return (
-        <Box sx={{ backgroundColor: '#f5f5f5', minHeight: '100vh', py: 4 }}>
-            <Container maxWidth="md">
-                {/* ボキャブラリー設定フォーム */}
-                <VocabularyForm
-                    vocabularyName={vocabularyName}
-                    setVocabularyName={setVocabularyName}
-                    languageCode={languageCode}
-                    setLanguageCode={setLanguageCode}
-                />
-
-                {/* フレーズ設定テーブル */}
-                <DictionarySettings
-                />
-
-                {/* 保存ボタン */}
-                <Box display="flex" justifyContent="center" mt={4}>
-                    <Button variant="contained" color="primary" onClick={handleSubmit}>
-                        保存
-                    </Button>
-                </Box>
-            </Container>
-        </Box>
+        <VocabularyLayout
+            vocabularyName={vocabularyName}
+            setVocabularyName={setVocabularyName}
+            languageCode={languageCode}
+            setLanguageCode={setLanguageCode}
+            vocabularies={vocabularies}
+            onVocabularyChange={handleVocabularyChange}
+            onAddVocabulary={handleAddVocabulary}
+            onRemoveVocabulary={handleRemoveVocabulary}
+            setVocabulary={setVocabularies}
+            vocabularyState={""}
+            handleSubmit={handleSubmit}
+            submitButtonText="保存"
+        />
     );
 };
 

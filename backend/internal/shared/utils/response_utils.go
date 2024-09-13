@@ -14,7 +14,7 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	}
 }
 
-// RespondWithError エラー応答を返します
+// RespondWithError JSON形式のエラー応答を返します
 func RespondWithError(w http.ResponseWriter, code int, message string) {
-	http.Error(w, message, code)
+	RespondWithJSON(w, code, map[string]string{"message": message})
 }

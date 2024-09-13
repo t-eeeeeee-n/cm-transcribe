@@ -38,7 +38,7 @@ EOF
     - **400 Bad Request**: パラメータが不正または不足している場合。
     - **500 Internal Server Error**: サーバー内部のエラー。
 
-### 2. `/api/custom_vocabulary/create` [POST]
+### 2. `/api/custom/vocabulary/create` [POST]
 
 - **説明**: カスタムボキャブラリーを作成し、Amazon Transcribeに登録します。送信されたボキャブラリー情報をCSVファイルとして一時的に保存し、そのファイルをS3にアップロードした後、AWS Transcribeに登録します。
 - **リクエストボディ**:
@@ -52,7 +52,7 @@ EOF
 - **リクエスト例**:
 
 ```bash
-curl -X POST "http://localhost:8080/api/custom_vocabulary/create" \
+curl -X POST "http://localhost:8080/api/custom/vocabulary/create" \
 -H "Content-Type: application/json" \
 -d @- <<'EOF'
 {
@@ -88,7 +88,7 @@ EOF
   - **400 Bad Request**: 必要なパラメータが不足している場合や、JSONの形式が正しくない場合。
   - **500 Internal Server Error**: サーバー内部のエラーやAWSへのリクエストが失敗した場合。
 
-### 3. `/api/custom_vocabulary/update` [POST]
+### 3. `/api/custom/vocabulary/update` [POST]
 
 - **説明**: 既存のカスタムボキャブラリーに新しい語彙を上書きします。
 - **リクエストボディ**:
@@ -102,7 +102,7 @@ EOF
 - **リクエスト例**:
 
 ```bash
-curl -X POST "http://localhost:8080/api/custom_vocabulary/update" \
+curl -X POST "http://localhost:8080/api/custom/vocabulary/update" \
 -H "Content-Type: application/json" \
 -d @- <<'EOF'
 {
@@ -131,3 +131,31 @@ EOF
 - **エラーレスポンス**:
   - **400 Bad Request**: 必要なパラメータが不足している場合や、JSONの形式が正しくない場合。
   - **500 Internal Server Error**: サーバー内部のエラーやAWSへのリクエストが失敗した場合。
+
+### 4. `/api/custom/vocabulary/get` [GET]
+
+- **説明**: 指定した名前のカスタムボキャブラリーを取得します。Amazon Transcribeに登録されているカスタムボキャブラリーの詳細情報を返します。
+- **クエリパラメータ**:
+  - `name` (必須): 取得したいカスタムボキャブラリーの名前。
+- **リクエスト例**:
+
+```bash
+curl -X GET "http://localhost:8080/api/custom/vocabulary/get?name=MyVocabulary01" \
+-H "Content-Type: application/json"
+```
+
+- **レスポンス**:
+
+```bash
+{
+  "VocabularyName": "MyVocabulary01",
+  "LanguageCode": "ja-JP",
+  "FileUri": "s3://bucket-name/path/to/vocabulary.csv",
+  "VocabularyState": "READY"
+}
+```
+
+- **エラーレスポンス**:
+  - **400 Bad Request**: 必要なパラメータが不足している場合や、クエリパラメータが正しくない場合。
+  - **404 Not Found**: 指定された名前のカスタムボキャブラリーが見つからない場合。
+  - **500 Internal Server Error**:  サーバー内部のエラーやAWSへのリクエストが失敗した場合。

@@ -6,7 +6,10 @@ import (
 	"cmTranscribe/internal/domain/service"
 	"cmTranscribe/internal/infra/config"
 	"cmTranscribe/internal/shared/validator"
+	"encoding/csv"
 	"fmt"
+	"io"
+	"net/http"
 )
 
 // CustomVocabularyService アプリケーション層のサービス
@@ -141,4 +144,75 @@ func (s *CustomVocabularyService) UpdateCustomVocabulary(request dto.UpdateVocab
 
 	// ドメインサービスを使ってカスタムボキャブラリを作成
 	return s.CustomVocabularyService.UpdateCustomVocabulary(*customVocabulary)
+}
+
+// GetCustomVocabularyByName 名前でカスタムボキャブラリを取得し、クライアントに返す形式に変換します
+func (s *CustomVocabularyService) GetCustomVocabularyByName(name string) (*dto.CustomVocabularyResponse, error) {
+	// ドメインサービスを使ってデータを取得
+	customVocab, err := s.CustomVocabularyService.GetCustomVocabularyByName(name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get custom vocabulary: %v", err)
+	}
+
+	// DownloadUriから内容をダウンロード
+	vocabularies, err := s.downloadAndParseVocabularyFile(customVocab.FileUri)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download and parse vocabulary file: %v", err)
+	}
+
+	// 結果の構築
+	response := &dto.CustomVocabularyResponse{
+		VocabularyName:   customVocab.VocabularyName,
+		LanguageCode:     customVocab.LanguageCode,
+		Vocabularies:     vocabularies,
+		VocabularyState:  customVocab.VocabularyState,
+		VocabularyLastModifiedTime: customVocab.VocabularyLastModifiedTime,
+	}
+
+	return response, nil
+}
+
+// downloadAndParseVocabularyFile ダウンロードしてパースする
+func (s *CustomVocabularyService) downloadAndParseVocabularyFile(uri string) ([]dto.Vocabulary, error) {
+	// HTTPリクエストを使用してファイルをダウンロード
+	resp, err := http.Get(uri)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download file: %v", err)
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			fmt.Printf("Failed to close file: %v\n", err)
+		}
+	}()
+
+	// ダウンロードした内容をパース
+	var vocabularies []dto.Vocabulary
+	reader := csv.NewReader(resp.Body)
+	reader.Comma = '\t' // ファイルの区切り文字がタブであることを想定
+
+	// ヘッダーをスキップ
+	if _, err := reader.Read(); err != nil {
+		return nil, fmt.Errorf("failed to read header: %v", err)
+	}
+
+	// 各行をパースして構造体にマッピング
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse CSV: %v", err)
+		}
+
+		vocabulary := dto.Vocabulary{
+			Phrase:     record[0],
+			IPA:        record[1],
+			SoundsLike: record[2],
+			DisplayAs:  record[3],
+		}
+		vocabularies = append(vocabularies, vocabulary)
+	}
+
+	return vocabularies, nil
 }

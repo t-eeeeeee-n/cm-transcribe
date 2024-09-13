@@ -5,6 +5,7 @@ import (
 	"cmTranscribe/internal/app/service"
 	"cmTranscribe/internal/shared/utils"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -58,6 +59,37 @@ func (h *CustomVocabularyHandler) HandleUpdateVocabulary(w http.ResponseWriter, 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(map[string]string{"message": "Custom vocabulary updated successfully"}); err != nil {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
+}
+
+// HandleGetVocabularyByName カスタムボキャブラリの内容を取得します。
+func (h *CustomVocabularyHandler) HandleGetVocabularyByName(w http.ResponseWriter, r *http.Request) {
+	// クエリパラメータからカスタムボキャブラリーの名前を取得
+	vocabularyName := r.URL.Query().Get("name")
+	if vocabularyName == "" {
+		utils.RespondWithError(w, http.StatusBadRequest, "Missing vocabulary name")
+		return
+	}
+
+	// サービスを使ってカスタムボキャブラリーの内容を取得
+	vocabulary, err := h.Service.GetCustomVocabularyByName(vocabularyName)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Error retrieving vocabulary: %v", err))
+		return
+	}
+
+	// JSONレスポンスを返す
+	response, err := json.Marshal(vocabulary)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error marshaling response: %v", err), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(response)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error write response: %v", err), http.StatusInternalServerError)
 		return
 	}
 }

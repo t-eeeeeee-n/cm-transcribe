@@ -33,11 +33,11 @@ func GenerateFilePath(name string) string {
 	return fmt.Sprintf("/tmp/%s_%s.csv", name, timestamp)
 }
 
-// ConvertEntriesToContent は[]dto.VocabularyEntryを[][]stringに変換する
-func ConvertEntriesToContent(entries []dto.VocabularyEntry) [][]string {
+// ConvertEntriesToContent は[]dto.Vocabulary[][]stringに変換する
+func ConvertEntriesToContent(vocabularies []dto.Vocabulary) [][]string {
 	content := [][]string{constant.VocabularyCsvHeader} // ヘッダー
-	for _, entry := range entries {
-		record := []string{entry.Phrase, entry.IPA, entry.SoundsLike, entry.DisplayAs}
+	for _, vocabulary := range vocabularies {
+		record := []string{vocabulary.Phrase, vocabulary.IPA, vocabulary.SoundsLike, vocabulary.DisplayAs}
 		content = append(content, record)
 	}
 	return content
