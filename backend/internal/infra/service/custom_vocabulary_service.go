@@ -2,49 +2,49 @@ package service
 
 import (
 	"cmTranscribe/internal/domain/model"
-	"cmTranscribe/internal/domain/service"
-	"errors"
+	"context"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/transcribeservice"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/transcribe"
+	"github.com/aws/aws-sdk-go-v2/service/transcribe/types"
+	"github.com/aws/smithy-go"
+	"github.com/pkg/errors"
 	"log"
 )
 
-// CustomVocabularyService AWS Transcribeを使用したCustomVocabularyServiceの実装
 type CustomVocabularyService struct {
-	//client   *transcribeservice.TranscribeService
-	client   TranscribeServiceClient
-	s3Client *s3.S3
+	client   *transcribe.Client
+	s3Client *s3.Client
 }
 
 // NewCustomVocabularyService 新しいAWSCustomVocabularyServiceを作成します
-func NewCustomVocabularyService(region string) service.CustomVocabularyService {
-	sess := session.Must(session.NewSession(&aws.Config{
-		Region: aws.String(region),
-	}))
+func NewCustomVocabularyService(ctx context.Context, region string) (*CustomVocabularyService, error) {
+	// デフォルト設定とリージョンを使用してAWS設定を読み込み
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
+	if err != nil {
+		return nil, err
+	}
 
 	return &CustomVocabularyService{
-		client:   transcribeservice.New(sess),
-		s3Client: s3.New(sess),
-	}
+		client:   transcribe.NewFromConfig(cfg),
+		s3Client: s3.NewFromConfig(cfg),
+	}, nil
 }
 
-func (s *CustomVocabularyService) CreateCustomVocabulary(vocabulary model.CustomVocabulary) error {
-	input := &transcribeservice.CreateVocabularyInput{
-		LanguageCode:      aws.String(vocabulary.LanguageCode),
+func (s *CustomVocabularyService) CreateCustomVocabulary(ctx context.Context, vocabulary model.CustomVocabulary) error {
+	input := &transcribe.CreateVocabularyInput{
+		LanguageCode:      types.LanguageCode(vocabulary.LanguageCode), // LanguageCode を直接設定
 		VocabularyName:    aws.String(vocabulary.VocabularyName),
 		VocabularyFileUri: aws.String(vocabulary.FileUri),
 	}
 
-	_, err := s.client.CreateVocabulary(input)
+	_, err := s.client.CreateVocabulary(ctx, input)
 	if err != nil {
-		// AWS SDKのエラーの詳細を取得してバックエンドでログを出力
-		var awsErr awserr.Error
-		if errors.As(err, &awsErr) {
-			log.Printf("Failed to create custom vocabulary: %s (code: %s, original error: %v)", awsErr.Message(), awsErr.Code(), awsErr.OrigErr())
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			log.Printf("Failed to create custom vocabulary: %s (code: %s)", apiErr.ErrorMessage(), apiErr.ErrorCode())
 		} else {
 			log.Printf("Failed to create custom vocabulary: %v", err)
 		}
@@ -54,34 +54,66 @@ func (s *CustomVocabularyService) CreateCustomVocabulary(vocabulary model.Custom
 	return nil
 }
 
-func (s *CustomVocabularyService) UpdateCustomVocabulary(vocabulary model.CustomVocabulary) error {
-	input := &transcribeservice.UpdateVocabularyInput{
-		LanguageCode:      aws.String(vocabulary.LanguageCode),
+// UpdateCustomVocabulary updates an existing custom vocabulary
+func (s *CustomVocabularyService) UpdateCustomVocabulary(ctx context.Context, vocabulary model.CustomVocabulary) error {
+	// マッピング関数で言語コードを変換
+	languageCode, err := s.mapLanguageCode(vocabulary.LanguageCode)
+	if err != nil {
+		return fmt.Errorf("unsupported language code: %v", err)
+	}
+
+	// AWS SDK v2 用の UpdateVocabularyInput を作成
+	input := &transcribe.UpdateVocabularyInput{
+		LanguageCode:      languageCode,
 		VocabularyName:    aws.String(vocabulary.VocabularyName),
 		VocabularyFileUri: aws.String(vocabulary.FileUri),
 	}
 
-	_, err := s.client.UpdateVocabulary(input)
+	// Transcribe サービスを呼び出してカスタムボキャブラリを更新
+	_, err = s.client.UpdateVocabulary(ctx, input)
 	if err != nil {
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			log.Printf("Failed to update custom vocabulary: %s (code: %s)", apiErr.ErrorMessage(), apiErr.ErrorCode())
+		} else {
+			log.Printf("Failed to update custom vocabulary: %v", err)
+		}
 		return fmt.Errorf("failed to update custom vocabulary: %v", err)
 	}
 
 	return nil
 }
 
+// mapLanguageCode は、string 型の LanguageCode を types.LanguageCode に変換します
+func (s *CustomVocabularyService) mapLanguageCode(languageCode string) (types.LanguageCode, error) {
+	switch languageCode {
+	case "ja-JP":
+		return types.LanguageCodeJaJp, nil
+	case "en-US":
+		return types.LanguageCodeEnUs, nil
+	case "fr-FR":
+		return types.LanguageCodeFrFr, nil
+	case "es-ES":
+		return types.LanguageCodeEsEs, nil
+	default:
+		return "", fmt.Errorf("unsupported language code: %s", languageCode)
+	}
+}
+
 // GetCustomVocabularyByName 名前でカスタムボキャブラリを取得します
-func (s *CustomVocabularyService) GetCustomVocabularyByName(name string) (*model.CustomVocabularyResponse, error) {
+func (s *CustomVocabularyService) GetCustomVocabularyByName(ctx context.Context, name string) (*model.CustomVocabularyResponse, error) {
 	// AWS Transcribeからカスタムボキャブラリの内容を取得
-	input := &transcribeservice.GetVocabularyInput{
+	input := &transcribe.GetVocabularyInput{
 		VocabularyName: aws.String(name),
 	}
 
-	result, err := s.client.GetVocabulary(input)
+	// API リクエスト
+	result, err := s.client.GetVocabulary(ctx, input)
 	if err != nil {
-		// AWS SDKのエラーの詳細を取得してログ出力
-		var awsErr awserr.Error
-		if errors.As(err, &awsErr) {
-			log.Printf("Failed to get custom vocabulary: %s (code: %s, original error: %v)", awsErr.Message(), awsErr.Code(), awsErr.OrigErr())
+		// AWS SDK v2のエラーハンドリング
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			log.Printf("Failed to get custom vocabulary: %s (code: %s)", apiErr.ErrorMessage(), apiErr.ErrorCode())
 		} else {
 			log.Printf("Failed to get custom vocabulary: %v", err)
 		}
@@ -90,11 +122,11 @@ func (s *CustomVocabularyService) GetCustomVocabularyByName(name string) (*model
 
 	// 取得した結果をドメインモデルに変換
 	vocabulary := &model.CustomVocabularyResponse{
-		VocabularyName:   *result.VocabularyName,
-		LanguageCode:     *result.LanguageCode,
-		FileUri:          *result.DownloadUri,
-		VocabularyState:  *result.VocabularyState,
-		VocabularyLastModifiedTime: *result.VocabularyLastModifiedTime,
+		VocabularyName:             aws.ToString(result.VocabularyName),
+		LanguageCode:               string(result.LanguageCode),
+		FileUri:                    aws.ToString(result.DownloadUri),
+		VocabularyState:            string(result.VocabularyState),
+		VocabularyLastModifiedTime: aws.ToTime(result.LastModifiedTime),
 	}
 
 	return vocabulary, nil

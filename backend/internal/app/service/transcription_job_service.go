@@ -6,7 +6,9 @@ import (
 	"cmTranscribe/internal/domain/repository"
 	"cmTranscribe/internal/domain/service"
 	"cmTranscribe/internal/shared/validator"
+	"context"
 	"fmt"
+	"github.com/google/uuid"
 )
 
 // TranscriptionJobService 文字起こしに関連するサービスを提供します。
@@ -24,9 +26,12 @@ func NewTranscriptionJobService(repo repository.TranscriptionJobRepository, jobS
 }
 
 // StartTranscriptionJob 新しい文字起こしジョブを開始します。
-func (s *TranscriptionJobService) StartTranscriptionJob(req *dto.TranscriptionDto) (*model.TranscriptionJobDB, error) {
+func (s *TranscriptionJobService) StartTranscriptionJob(ctc context.Context, req *dto.TranscriptionDto) (*model.TranscriptionJobDB, error) {
+	// UUIDを使用してユニークなジョブIDを生成
+	jobID := uuid.New().String()
+	//fmt.Printf("test")
 	// ドメインモデルを作成
-	job := model.NewTranscriptionJobDB("job-id", req.MediaURI, req.LanguageCode)
+	job := model.NewTranscriptionJobDB(jobID, req.MediaURI, req.LanguageCode)
 
 	// ジョブをリポジトリに保存
 	err := s.Repo.Save(job)
@@ -41,7 +46,7 @@ func (s *TranscriptionJobService) StartTranscriptionJob(req *dto.TranscriptionDt
 		return nil, fmt.Errorf("error processing transcriptionJob: %v", err)
 	}
 
-	_, err = s.TranscriptionJobService.StartTranscriptionJob(transcriptionJob)
+	_, err = s.TranscriptionJobService.StartTranscriptionJob(ctc, transcriptionJob)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start transcription job: %v", err)
 	}

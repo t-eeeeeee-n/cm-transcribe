@@ -6,6 +6,7 @@ import (
 	"cmTranscribe/internal/domain/service"
 	"cmTranscribe/internal/infra/config"
 	"cmTranscribe/internal/shared/validator"
+	"context"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -33,7 +34,7 @@ func NewCustomVocabularyService(
 }
 
 // CreateCustomVocabulary カスタムボキャブラリを作成します
-func (s *CustomVocabularyService) CreateCustomVocabulary(request dto.CreateVocabularyDto) error {
+func (s *CustomVocabularyService) CreateCustomVocabulary(ctx context.Context, request dto.CreateVocabularyDto) error {
 	// DTOからドメインモデルに変換
 	entries := model.ConvertEntriesToContent(request.Vocabularies)
 	// ファイルパス作成
@@ -64,7 +65,7 @@ func (s *CustomVocabularyService) CreateCustomVocabulary(request dto.CreateVocab
 	}()
 
 	// ドメインモデルを作成
-	s3File := model.NewS3File(filePath, config.AppConfig.S3BucketName, "custom-vocabularies")
+	s3File := model.NewS3File(filePath, config.AppConfig.S3BucketName, config.AppConfig.S3PrefixVocabulary)
 	// バリデーションの実行
 	if err := validator.Validate(s3File); err != nil {
 		// エラーハンドリングのみ行う
@@ -72,7 +73,7 @@ func (s *CustomVocabularyService) CreateCustomVocabulary(request dto.CreateVocab
 	}
 
 	// S3にファイルをアップロード
-	s3Uri, err := s.S3StorageService.UploadToS3(*s3File)
+	s3Uri, err := s.S3StorageService.UploadToS3(ctx, *s3File)
 	if err != nil {
 		return fmt.Errorf("failed to update custom vocabulary: %v", err)
 	}
@@ -86,11 +87,11 @@ func (s *CustomVocabularyService) CreateCustomVocabulary(request dto.CreateVocab
 	}
 
 	// ドメインサービスを使ってカスタムボキャブラリを作成
-	return s.CustomVocabularyService.CreateCustomVocabulary(*customVocabulary)
+	return s.CustomVocabularyService.CreateCustomVocabulary(ctx, *customVocabulary)
 }
 
 // UpdateCustomVocabulary 既存のカスタムボキャブラリを更新します。
-func (s *CustomVocabularyService) UpdateCustomVocabulary(request dto.UpdateVocabularyDto) error {
+func (s *CustomVocabularyService) UpdateCustomVocabulary(ctx context.Context, request dto.UpdateVocabularyDto) error {
 	// DTOからドメインモデルに変換
 	entries := model.ConvertEntriesToContent(request.Vocabularies)
 	// ファイルパス作成
@@ -121,7 +122,7 @@ func (s *CustomVocabularyService) UpdateCustomVocabulary(request dto.UpdateVocab
 	}()
 
 	// ドメインモデルを作成
-	s3File := model.NewS3File(filePath, config.AppConfig.S3BucketName, "custom-vocabularies")
+	s3File := model.NewS3File(filePath, config.AppConfig.S3BucketName, config.AppConfig.S3PrefixVocabulary)
 	// バリデーションの実行
 	if err := validator.Validate(s3File); err != nil {
 		// エラーハンドリングのみ行う
@@ -129,7 +130,7 @@ func (s *CustomVocabularyService) UpdateCustomVocabulary(request dto.UpdateVocab
 	}
 
 	// S3にファイルをアップロード
-	s3Uri, err := s.S3StorageService.UploadToS3(*s3File)
+	s3Uri, err := s.S3StorageService.UploadToS3(ctx, *s3File)
 	if err != nil {
 		return fmt.Errorf("failed to update custom vocabulary: %v", err)
 	}
@@ -143,13 +144,13 @@ func (s *CustomVocabularyService) UpdateCustomVocabulary(request dto.UpdateVocab
 	}
 
 	// ドメインサービスを使ってカスタムボキャブラリを作成
-	return s.CustomVocabularyService.UpdateCustomVocabulary(*customVocabulary)
+	return s.CustomVocabularyService.UpdateCustomVocabulary(ctx, *customVocabulary)
 }
 
 // GetCustomVocabularyByName 名前でカスタムボキャブラリを取得し、クライアントに返す形式に変換します
-func (s *CustomVocabularyService) GetCustomVocabularyByName(name string) (*dto.CustomVocabularyResponse, error) {
+func (s *CustomVocabularyService) GetCustomVocabularyByName(ctx context.Context, name string) (*dto.CustomVocabularyResponse, error) {
 	// ドメインサービスを使ってデータを取得
-	customVocab, err := s.CustomVocabularyService.GetCustomVocabularyByName(name)
+	customVocab, err := s.CustomVocabularyService.GetCustomVocabularyByName(ctx, name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get custom vocabulary: %v", err)
 	}
@@ -162,10 +163,10 @@ func (s *CustomVocabularyService) GetCustomVocabularyByName(name string) (*dto.C
 
 	// 結果の構築
 	response := &dto.CustomVocabularyResponse{
-		VocabularyName:   customVocab.VocabularyName,
-		LanguageCode:     customVocab.LanguageCode,
-		Vocabularies:     vocabularies,
-		VocabularyState:  customVocab.VocabularyState,
+		VocabularyName:             customVocab.VocabularyName,
+		LanguageCode:               customVocab.LanguageCode,
+		Vocabularies:               vocabularies,
+		VocabularyState:            customVocab.VocabularyState,
 		VocabularyLastModifiedTime: customVocab.VocabularyLastModifiedTime,
 	}
 

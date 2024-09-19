@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import VocabularyStatus from "@/components/VocabularyStatus";
 import VocabularyLastModifiedTime from "@/components/VocabularyLastModifiedTime";
+import LanguageSelect from "@/components/LanguageSelect";
 
 interface VocabularyFormProps {
     vocabularyName: string;
@@ -49,23 +50,7 @@ const VocabularyForm: React.FC<VocabularyFormProps> = ({
 
                 {/* 言語選択フィールド */}
                 <div className="space-y-2">
-                    <Label htmlFor="language-select" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        言語
-                    </Label>
-                    <Select
-                        value={languageCode}
-                        onValueChange={(value) => setLanguageCode(value)}
-                    >
-                        <SelectTrigger className="border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring focus:ring-purple-200 focus:ring-opacity-50 focus:border-indigo-500">
-                            <SelectValue placeholder="言語を選択" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="ja-JP">日本語 (ja-JP)</SelectItem>
-                            <SelectItem value="en-US">英語、米国 (en-US)</SelectItem>
-                            <SelectItem value="fr-FR">フランス語 (fr-FR)</SelectItem>
-                            <SelectItem value="es-ES">スペイン語 (es-ES)</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <LanguageSelect languageCode={languageCode} setLanguageCode={setLanguageCode} />
                 </div>
 
                 {/* ステータス表示部分を追加 */}

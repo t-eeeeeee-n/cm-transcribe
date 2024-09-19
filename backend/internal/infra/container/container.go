@@ -6,6 +6,7 @@ import (
 	"cmTranscribe/internal/infra/config"
 	"cmTranscribe/internal/infra/persistence"
 	infraService "cmTranscribe/internal/infra/service"
+	"context"
 	"fmt"
 )
 
@@ -13,10 +14,11 @@ import (
 type AppContainer struct {
 	TranscriptionJobService *applicationService.TranscriptionJobService
 	CustomVocabularyService *applicationService.CustomVocabularyService
+	S3UploadService         *applicationService.S3UploadService
 }
 
 // NewAppContainer はアプリケーション全体の依存関係を初期化します
-func NewAppContainer() (*AppContainer, error) {
+func NewAppContainer(ctx context.Context) (*AppContainer, error) {
 	// 設定の読み込み
 	if err := config.LoadConfig(); err != nil {
 		return nil, err
@@ -29,10 +31,19 @@ func NewAppContainer() (*AppContainer, error) {
 	}
 
 	// 外部サービスの初期化
-	transcribeInfraService := infraService.NewTranscribeService(config.AppConfig.AWSRegion)
+	transcribeInfraService, err := infraService.NewTranscribeService(ctx, config.AppConfig.AWSRegion)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize TranscribeInfraService: %w", err)
+	}
 	fileInfraService := infraService.NewFileService()
-	s3StorageInfraService := infraService.NewS3StorageService(config.AppConfig.AWSRegion)
-	customVocabularyInfraService := infraService.NewCustomVocabularyService(config.AppConfig.AWSRegion)
+	s3StorageInfraService, err := infraService.NewS3StorageService(ctx, config.AppConfig.AWSRegion)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize S3StorageService: %w", err)
+	}
+	customVocabularyInfraService, err := infraService.NewCustomVocabularyService(ctx, config.AppConfig.AWSRegion)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize CustomVocabularyService: %w", err)
+	}
 
 	// ドメインサービスの初期化
 	transcriptionJobService := domainService.NewTranscriptionJobService(transcribeInfraService)
@@ -43,9 +54,11 @@ func NewAppContainer() (*AppContainer, error) {
 	// アプリケーションサービスの初期化
 	transcriptionJobAppService := applicationService.NewTranscriptionJobService(transcriptionRepo, transcriptionJobService)
 	customVocabularyAppService := applicationService.NewCustomVocabularyService(customVocabularyService, fileService, s3StorageService)
+	s3UploadAppService := applicationService.NewS3UploadService(s3StorageService)
 
 	return &AppContainer{
 		TranscriptionJobService: transcriptionJobAppService,
 		CustomVocabularyService: customVocabularyAppService,
+		S3UploadService:         s3UploadAppService,
 	}, nil
 }

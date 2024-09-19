@@ -2,10 +2,11 @@ package service
 
 import (
 	"cmTranscribe/internal/domain/model"
+	"context"
 )
 
 type TranscriptionJobService interface {
-	StartTranscriptionJob(input *model.TranscriptionJob) (*model.TranscriptionJob, error)
+	StartTranscriptionJob(ctx context.Context, input *model.TranscriptionJob) (*model.TranscriptionJob, error)
 }
 
 // NewTranscriptionJobService ファクトリ関数

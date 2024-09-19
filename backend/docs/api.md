@@ -6,8 +6,8 @@
 
 - **説明**: 音声ファイルをAmazon Transcribeで文字起こしするためのジョブを作成します。
 - **リクエストボディ**:
-    - `media_uri` (必須): S3バケットの音声ファイルへのURI。
-    - `language` (オプション): 文字起こしの言語コード。デフォルトは `en-US`。
+    - `mediaUri` (必須): S3バケットの音声ファイルへのURI。
+    - `languageCode` (オプション): 文字起こしの言語コード。デフォルトは `en-US`。
 - **リクエスト例**:
 
 ```bash
@@ -15,9 +15,9 @@ curl -X POST "http://localhost:8080/api/transcriptions/start" \
 -H "Content-Type: application/json" \
 -d @- <<'EOF'
 {
-  "media_uri": "https://transcribe-test-a.s3.amazonaws.com/doda.mp3",
-  "language_code": "ja-JP",
-  "custom_vocabulary_name": "doda"
+  "mediaUri": "https://transcribe-test-a.s3.amazonaws.com/doda.mp3",
+  "languageCode": "ja-JP",
+  "customVocabularyName": "doda"
 }
 EOF
 ```

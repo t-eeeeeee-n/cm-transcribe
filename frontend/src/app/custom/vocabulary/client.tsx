@@ -36,11 +36,11 @@ const Client: React.FC = () => {
         };
 
         try {
-            await axios.post('/api/custom/vocabulary/create', body);
-            toast.success('保存しました！');  // 成功メッセージ
+            await axios.post('/api/vocabulary/create', body);
+            toast.success('保存しました！');
         } catch (error) {
             console.error('保存に失敗しました。', error);
-            toast.error('保存に失敗しました。');  // エラーメッセージ
+            toast.error('保存に失敗しました。');
         }
     };
 

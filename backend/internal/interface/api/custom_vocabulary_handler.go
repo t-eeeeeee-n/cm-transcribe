@@ -28,7 +28,7 @@ func (h *CustomVocabularyHandler) HandleCreateVocabulary(w http.ResponseWriter, 
 	}
 
 	// DTOをサービスに渡して処理
-	err := h.Service.CreateCustomVocabulary(req)
+	err := h.Service.CreateCustomVocabulary(r.Context(), req)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create custom vocabulary")
 		return
@@ -50,7 +50,7 @@ func (h *CustomVocabularyHandler) HandleUpdateVocabulary(w http.ResponseWriter, 
 	}
 
 	// DTOをサービスに渡して処理
-	err := h.Service.UpdateCustomVocabulary(req)
+	err := h.Service.UpdateCustomVocabulary(r.Context(), req)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to update custom vocabulary")
 		return
@@ -73,7 +73,7 @@ func (h *CustomVocabularyHandler) HandleGetVocabularyByName(w http.ResponseWrite
 	}
 
 	// サービスを使ってカスタムボキャブラリーの内容を取得
-	vocabulary, err := h.Service.GetCustomVocabularyByName(vocabularyName)
+	vocabulary, err := h.Service.GetCustomVocabularyByName(r.Context(), vocabularyName)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Error retrieving vocabulary: %v", err))
 		return

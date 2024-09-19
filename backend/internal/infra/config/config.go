@@ -9,10 +9,12 @@ import (
 
 // Config アプリケーションの設定を保持します。
 type Config struct {
-	Port         string
-	AWSRegion    string
-	S3BucketName string
-	MediaFormat  string
+	Port               string
+	AWSRegion          string
+	S3BucketName       string
+	S3PrefixVocabulary string
+	S3PrefixUploadFile string
+	MediaFormat        string
 }
 
 // AppConfig アプリケーション全体で使用される設定を保持します。
@@ -29,10 +31,12 @@ func LoadConfig() error {
 	}
 
 	AppConfig = &Config{
-		Port:         getEnv("PORT", "8080"),
-		AWSRegion:    getEnv("AWS_REGION", "ap-northeast-1"),
-		S3BucketName: getEnv("S3_BUCKET_NAME", ""),
-		MediaFormat:  getEnv("MEDIA_FORMAT", "mp3"),
+		Port:               getEnv("PORT", "8080"),
+		AWSRegion:          getEnv("AWS_REGION", "ap-northeast-1"),
+		S3BucketName:       getEnv("S3_BUCKET_NAME", ""),
+		S3PrefixVocabulary: getEnv("S3_PREFIX_VOCABULARY", ""),
+		S3PrefixUploadFile: getEnv("S3_PREFIX_UPLOAD_FILE", ""),
+		MediaFormat:        getEnv("MEDIA_FORMAT", "mp3"),
 	}
 
 	// 必須の設定項目が不足している場合、エラーを返す

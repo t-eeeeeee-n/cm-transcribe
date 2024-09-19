@@ -3,7 +3,7 @@ import Client from './client';
 
 // サーバーサイドでデータを取得する関数
 async function fetchVocabularyData(name: string) {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/custom/vocabulary/${name}`, {  // フルURLを指定
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/vocabulary/${name}`, {  // フルURLを指定
         cache: 'no-store', // 最新のデータを取得するためキャッシュを無効化
     });
 

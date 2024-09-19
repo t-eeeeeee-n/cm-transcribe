@@ -1,9 +1,12 @@
 package service
 
-import "cmTranscribe/internal/domain/model"
+import (
+	"cmTranscribe/internal/domain/model"
+	"context"
+)
 
 type S3StorageService interface {
-	UploadToS3(s3File model.S3File) (string, error)
+	UploadToS3(ctx context.Context, s3File model.S3File) (string, error)
 }
 
 // NewS3StorageService ファクトリ関数

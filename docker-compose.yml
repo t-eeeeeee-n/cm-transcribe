@@ -14,6 +14,7 @@ services:
       - .env
     environment:
       TZ: Asia/Tokyo
+      APP_ENV: dev
     stdin_open: true
     tty: true
 

@@ -7,3 +7,6 @@ include_ext = ["go", "tpl", "tmpl", "html"]
 
 [log]
 level = "debug"
+
+[fswatcher]
+poll = true

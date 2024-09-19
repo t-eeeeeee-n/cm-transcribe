@@ -5,6 +5,7 @@ import (
 	"cmTranscribe/internal/app/service"
 	"cmTranscribe/internal/shared/utils"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -28,7 +29,9 @@ func (h *TranscriptionJobHandler) HandleStartJob(w http.ResponseWriter, r *http.
 		return
 	}
 
-	job, err := h.Service.StartTranscriptionJob(&req)
+	fmt.Printf("TranscriptionDto: %v\n", req)
+
+	job, err := h.Service.StartTranscriptionJob(r.Context(), &req)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to start transcription")
 		return
