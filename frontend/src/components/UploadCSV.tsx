@@ -45,7 +45,7 @@ const UploadCSV = ({ onUpload, fileName, setFileName }: UploadCSVProps) => {
             reader.readAsArrayBuffer(file);
         } catch (error) {
             setErrorMessage('ファイルの読み込みに失敗しました。');
-            console.error('Error reading file:', error);
+            // console.error('Error reading file:', error);
         }
     };
 

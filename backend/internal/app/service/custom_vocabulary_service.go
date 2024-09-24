@@ -75,7 +75,7 @@ func (s *CustomVocabularyService) CreateCustomVocabulary(ctx context.Context, re
 	// S3にファイルをアップロード
 	s3Uri, err := s.S3StorageService.UploadToS3(ctx, *s3File)
 	if err != nil {
-		return fmt.Errorf("failed to update custom vocabulary: %v", err)
+		return fmt.Errorf("failed to create custom vocabulary: %v", err)
 	}
 
 	// ドメインモデルを作成
@@ -87,7 +87,11 @@ func (s *CustomVocabularyService) CreateCustomVocabulary(ctx context.Context, re
 	}
 
 	// ドメインサービスを使ってカスタムボキャブラリを作成
-	return s.CustomVocabularyService.CreateCustomVocabulary(ctx, *customVocabulary)
+	err = s.CustomVocabularyService.CreateCustomVocabulary(ctx, *customVocabulary)
+	if err != nil {
+		return fmt.Errorf("failed to create custom vocabulary: %v", err)
+	}
+	return nil
 }
 
 // UpdateCustomVocabulary 既存のカスタムボキャブラリを更新します。
@@ -144,7 +148,11 @@ func (s *CustomVocabularyService) UpdateCustomVocabulary(ctx context.Context, re
 	}
 
 	// ドメインサービスを使ってカスタムボキャブラリを作成
-	return s.CustomVocabularyService.UpdateCustomVocabulary(ctx, *customVocabulary)
+	err = s.CustomVocabularyService.UpdateCustomVocabulary(ctx, *customVocabulary)
+	if err != nil {
+		return fmt.Errorf("failed to update custom vocabulary: %v", err)
+	}
+	return nil
 }
 
 // GetCustomVocabularyByName 名前でカスタムボキャブラリを取得し、クライアントに返す形式に変換します

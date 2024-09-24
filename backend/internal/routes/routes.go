@@ -26,8 +26,10 @@ func NewRouter(
 
 func (r *Router) RegisterRoutes() {
 	http.Handle("/api/transcriptions/start", middleware.HttpMethodMiddleware(http.HandlerFunc(r.TranscriptionHandler.HandleStartJob), http.MethodPost))
-	http.Handle("/api/custom/vocabulary/create", middleware.HttpMethodMiddleware(http.HandlerFunc(r.CustomVocabularyHandler.HandleCreateVocabulary), http.MethodPost))
-	http.Handle("/api/custom/vocabulary/update", middleware.HttpMethodMiddleware(http.HandlerFunc(r.CustomVocabularyHandler.HandleUpdateVocabulary), http.MethodPost))
-	http.Handle("/api/custom/vocabulary/get", middleware.HttpMethodMiddleware(http.HandlerFunc(r.CustomVocabularyHandler.HandleGetVocabularyByName), http.MethodGet))
+	http.Handle("/api/transcriptions/list", middleware.HttpMethodMiddleware(http.HandlerFunc(r.TranscriptionHandler.HandleGetJobList), http.MethodGet))
+	//http.Handle("/api/custom/vocabulary/create", middleware.HttpMethodMiddleware(http.HandlerFunc(r.CustomVocabularyHandler.HandleCreateVocabulary), http.MethodPost))
+	//http.Handle("/api/custom/vocabulary/update", middleware.HttpMethodMiddleware(http.HandlerFunc(r.CustomVocabularyHandler.HandleUpdateVocabulary), http.MethodPut))
+	//http.Handle("/api/custom/vocabulary/get", middleware.HttpMethodMiddleware(http.HandlerFunc(r.CustomVocabularyHandler.HandleGetVocabularyByName), http.MethodGet))
+	http.Handle("/api/custom/vocabulary", http.HandlerFunc(r.CustomVocabularyHandler.HandleVocabulary))
 	http.Handle("/api/s3/upload", middleware.HttpMethodMiddleware(http.HandlerFunc(r.S3UploadHandler.HandleUploadToS3), http.MethodPost))
 }

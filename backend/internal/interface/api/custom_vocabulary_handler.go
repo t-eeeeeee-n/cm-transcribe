@@ -6,7 +6,9 @@ import (
 	"cmTranscribe/internal/shared/utils"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"strings"
 )
 
 // CustomVocabularyHandler ハンドラ構造体
@@ -20,6 +22,19 @@ func NewCustomVocabularyHandler(service *service.CustomVocabularyService) *Custo
 	}
 }
 
+func (h *CustomVocabularyHandler) HandleVocabulary(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		h.HandleCreateVocabulary(w, r)
+	case http.MethodPut:
+		h.HandleUpdateVocabulary(w, r)
+	case http.MethodGet:
+		h.HandleGetVocabularyByName(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
 func (h *CustomVocabularyHandler) HandleCreateVocabulary(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateVocabularyDto
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -30,6 +45,12 @@ func (h *CustomVocabularyHandler) HandleCreateVocabulary(w http.ResponseWriter, 
 	// DTOをサービスに渡して処理
 	err := h.Service.CreateCustomVocabulary(r.Context(), req)
 	if err != nil {
+		log.Println("err.Error():", err.Error())
+		log.Println("err:", err)
+		if strings.Contains(err.Error(), "conflict: custom vocabulary name already exists") {
+			utils.RespondWithError(w, http.StatusConflict, err.Error())
+			return
+		}
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create custom vocabulary")
 		return
 	}
@@ -52,6 +73,10 @@ func (h *CustomVocabularyHandler) HandleUpdateVocabulary(w http.ResponseWriter, 
 	// DTOをサービスに渡して処理
 	err := h.Service.UpdateCustomVocabulary(r.Context(), req)
 	if err != nil {
+		if strings.Contains(err.Error(), "conflict: custom vocabulary name already exists") {
+			utils.RespondWithError(w, http.StatusConflict, err.Error())
+			return
+		}
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to update custom vocabulary")
 		return
 	}

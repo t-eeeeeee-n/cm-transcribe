@@ -17,7 +17,7 @@ func NewS3UploadService(s3StorageService service.S3StorageService) *S3UploadServ
 }
 
 // UploadToS3 は、指定されたファイルを S3 にアップロードします
-func (s *S3UploadService) UploadToS3(ctc context.Context, filePath, bucketName, keyPrefix string) (string, error) {
+func (s *S3UploadService) UploadToS3(ctx context.Context, filePath, bucketName, keyPrefix string) (string, error) {
 	// S3Fileのインスタンスを作成
 	s3File := model.S3File{
 		FilePath:   filePath,
@@ -31,7 +31,7 @@ func (s *S3UploadService) UploadToS3(ctc context.Context, filePath, bucketName, 
 	}
 
 	// S3 にアップロード
-	url, err := s.s3StorageService.UploadToS3(ctc, s3File)
+	url, err := s.s3StorageService.UploadToS3(ctx, s3File)
 	if err != nil {
 		return "", fmt.Errorf("failed to upload to S3: %v", err)
 	}

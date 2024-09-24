@@ -1,19 +1,12 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import {languages} from "@/utils/languages";
 
 interface LanguageSelectProps {
     languageCode: string;
     setLanguageCode: (code: string) => void;
 }
-
-// 言語選択肢の配列
-const languages = [
-    { value: 'ja-JP', label: '日本語 (ja-JP)' },
-    { value: 'en-US', label: '英語、米国 (en-US)' },
-    { value: 'fr-FR', label: 'フランス語 (fr-FR)' },
-    { value: 'es-ES', label: 'スペイン語 (es-ES)' },
-];
 
 const LanguageSelect: React.FC<LanguageSelectProps> = ({ languageCode, setLanguageCode }) => {
     return (

@@ -35,18 +35,16 @@ func NewCustomVocabularyService(ctx context.Context, region string) (*CustomVoca
 
 func (s *CustomVocabularyService) CreateCustomVocabulary(ctx context.Context, vocabulary model.CustomVocabulary) error {
 	input := &transcribe.CreateVocabularyInput{
-		LanguageCode:      types.LanguageCode(vocabulary.LanguageCode), // LanguageCode を直接設定
+		LanguageCode:      types.LanguageCode(vocabulary.LanguageCode),
 		VocabularyName:    aws.String(vocabulary.VocabularyName),
 		VocabularyFileUri: aws.String(vocabulary.FileUri),
 	}
 
 	_, err := s.client.CreateVocabulary(ctx, input)
 	if err != nil {
-		var apiErr smithy.APIError
-		if errors.As(err, &apiErr) {
-			log.Printf("Failed to create custom vocabulary: %s (code: %s)", apiErr.ErrorMessage(), apiErr.ErrorCode())
-		} else {
-			log.Printf("Failed to create custom vocabulary: %v", err)
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "ConflictException" {
+			return fmt.Errorf("conflict: custom vocabulary name already exists")
 		}
 		return fmt.Errorf("failed to create custom vocabulary: %v", err)
 	}
@@ -56,27 +54,17 @@ func (s *CustomVocabularyService) CreateCustomVocabulary(ctx context.Context, vo
 
 // UpdateCustomVocabulary updates an existing custom vocabulary
 func (s *CustomVocabularyService) UpdateCustomVocabulary(ctx context.Context, vocabulary model.CustomVocabulary) error {
-	// マッピング関数で言語コードを変換
-	languageCode, err := s.mapLanguageCode(vocabulary.LanguageCode)
-	if err != nil {
-		return fmt.Errorf("unsupported language code: %v", err)
-	}
-
-	// AWS SDK v2 用の UpdateVocabularyInput を作成
 	input := &transcribe.UpdateVocabularyInput{
-		LanguageCode:      languageCode,
+		LanguageCode:      types.LanguageCode(vocabulary.LanguageCode),
 		VocabularyName:    aws.String(vocabulary.VocabularyName),
 		VocabularyFileUri: aws.String(vocabulary.FileUri),
 	}
 
-	// Transcribe サービスを呼び出してカスタムボキャブラリを更新
-	_, err = s.client.UpdateVocabulary(ctx, input)
+	_, err := s.client.UpdateVocabulary(ctx, input)
 	if err != nil {
-		var apiErr smithy.APIError
-		if errors.As(err, &apiErr) {
-			log.Printf("Failed to update custom vocabulary: %s (code: %s)", apiErr.ErrorMessage(), apiErr.ErrorCode())
-		} else {
-			log.Printf("Failed to update custom vocabulary: %v", err)
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "ConflictException" {
+			return fmt.Errorf("conflict: custom vocabulary name already exists")
 		}
 		return fmt.Errorf("failed to update custom vocabulary: %v", err)
 	}

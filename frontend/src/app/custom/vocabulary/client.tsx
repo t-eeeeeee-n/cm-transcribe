@@ -12,6 +12,7 @@ const Client: React.FC = () => {
     const [vocabularyName, setVocabularyName] = useState('');
     const [languageCode, setLanguageCode] = useState<string>("ja-JP");
     const [vocabularies, setVocabularies] = useState<Vocabulary[]>([]);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
 
     const handleVocabularyChange = (index: number, field: keyof Vocabulary, value: string) => {
         setVocabularies(updateVocabulary(vocabularies, index, field, value));
@@ -29,6 +30,8 @@ const Client: React.FC = () => {
         // バリデーションチェック
         if (!validateForm({ vocabularyName, languageCode, vocabularies })) return;
 
+        setIsLoading(true);
+
         const body = {
             name: vocabularyName,
             language_code: languageCode,
@@ -36,11 +39,19 @@ const Client: React.FC = () => {
         };
 
         try {
-            await axios.post('/api/vocabulary/create', body);
+            await axios.post('/api/vocabulary', body);
             toast.success('保存しました！');
         } catch (error) {
-            console.error('保存に失敗しました。', error);
+            // console.error('保存に失敗しました。', error);
+            if (axios.isAxiosError(error) && error.response) {
+                if (error.response.status === 409) {
+                    toast.error("カスタムボキャブラリー名が既に存在します。");
+                    return;
+                }
+            }
             toast.error('保存に失敗しました。');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -57,6 +68,7 @@ const Client: React.FC = () => {
             setVocabulary={setVocabularies}
             vocabularyState={""}
             handleSubmit={handleSubmit}
+            isLoading={isLoading}
             submitButtonText="保存"
         />
     );

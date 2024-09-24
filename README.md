@@ -3,3 +3,9 @@
 This project is for transcribing audio using AWS services...
 
 ![System Architecture](./docs/system-architecture-diagram-black.webp)
+
+
+### shadcn
+```bash
+npx shadcn add ・・・
+```

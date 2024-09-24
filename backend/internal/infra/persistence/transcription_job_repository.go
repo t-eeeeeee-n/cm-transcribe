@@ -22,7 +22,7 @@ func (r *TranscriptionJobRepository) Save(job *model.TranscriptionJobDB) error {
 	if job == nil {
 		return fmt.Errorf("failed to save transcription job: job is nil")
 	}
-	r.jobs[job.ID] = job
+	r.jobs[job.JobName] = job
 	return nil
 }
 
@@ -30,7 +30,7 @@ func (r *TranscriptionJobRepository) Save(job *model.TranscriptionJobDB) error {
 func (r *TranscriptionJobRepository) FindByID(id string) (*model.TranscriptionJobDB, error) {
 	job, exists := r.jobs[id]
 	if !exists {
-		return nil, fmt.Errorf("transcription job with ID %s not found", id)
+		return nil, fmt.Errorf("transcription job with JobName %s not found", id)
 	}
 	return job, nil
 }

@@ -4,7 +4,8 @@ import VocabularyForm from "@/components/VocabularyForm";
 import DictionarySettings from "@/components/DictionarySettings";
 import { Vocabulary } from "@/types/Vocabulary";
 import { Toaster } from 'react-hot-toast';
-import VocabularyStatus from "@/components/VocabularyStatus";  // Toasterのインポート
+import VocabularyStatus from "@/components/VocabularyStatus";
+import LoadingSpinner from "@/components/LoadingSpinner";  // Toasterのインポート
 
 interface VocabularyLayoutProps {
     vocabularyName: string;
@@ -18,7 +19,8 @@ interface VocabularyLayoutProps {
     setVocabulary: (vocabularies: Vocabulary[]) => void;
     vocabularyState: string;
     lastModifiedTime?: string;
-    handleSubmit: () => void;  // handleSubmit関数をプロパティとして受け取る
+    handleSubmit: () => void;
+    isLoading: boolean;
     submitButtonText: string;
 }
 
@@ -34,7 +36,8 @@ const VocabularyLayout: React.FC<VocabularyLayoutProps> = ({
                                                                setVocabulary,
                                                                vocabularyState,
                                                                lastModifiedTime,
-                                                               handleSubmit,  // handleSubmitを受け取る
+                                                               handleSubmit,
+                                                               isLoading,
                                                                submitButtonText,
                                                            }) => {
     return (
@@ -65,10 +68,10 @@ const VocabularyLayout: React.FC<VocabularyLayoutProps> = ({
                 {/* Submit Button */}
                 <div className="flex justify-center mt-8">
                     <Button
-                        className="bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200 px-6 py-3 rounded-md"
+                        className="w-1/3 bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200 px-6 py-3 rounded-md"
                         onClick={handleSubmit}  // 引数で渡されたhandleSubmitを使う
                     >
-                        {submitButtonText}
+                        {isLoading ? <LoadingSpinner /> : submitButtonText}
                     </Button>
                 </div>
             </div>

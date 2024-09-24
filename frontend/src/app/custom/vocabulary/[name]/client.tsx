@@ -20,11 +20,10 @@ interface ClientProps {
 }
 
 const Client: React.FC<ClientProps> = ({ data }) => {
-    const router = useRouter();
-
     const [vocabularyName, setVocabularyName] = useState<string>(data.vocabularyName);
     const [languageCode, setLanguageCode] = useState<string>(data.languageCode);
     const [vocabularies, setVocabularies] = useState<Vocabulary[]>(data.vocabularies);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
 
     const handleVocabularyChange = (index: number, field: keyof Vocabulary, value: string) => {
         setVocabularies(updateVocabulary(vocabularies, index, field, value));
@@ -42,6 +41,8 @@ const Client: React.FC<ClientProps> = ({ data }) => {
         // バリデーションチェック
         if (!validateForm({ vocabularyName, languageCode, vocabularies })) return;
 
+        setIsLoading(true);
+
         const body = {
             name: vocabularyName,
             language_code: languageCode,
@@ -49,12 +50,20 @@ const Client: React.FC<ClientProps> = ({ data }) => {
         };
 
         try {
-            await axios.put(`/api/vocabulary/${data.vocabularyName}`, body);
+            await axios.put('/api/vocabulary', body);
             toast.success('更新しました！');  // 成功メッセージ
-            router.push('/custom/vocabulary');  // 更新後にリダイレクト
+            // router.push('/custom/vocabulary');  // 更新後にリダイレクト
         } catch (error) {
-            console.error('更新に失敗しました。', error);
+            // console.error('更新に失敗しました。', error);
+            if (axios.isAxiosError(error) && error.response) {
+                if (error.response.status === 409) {
+                    toast.error("カスタムボキャブラリー名が既に存在します。");
+                    return;
+                }
+            }
             toast.error('更新に失敗しました。');  // エラーメッセージ
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -71,7 +80,8 @@ const Client: React.FC<ClientProps> = ({ data }) => {
             setVocabulary={setVocabularies}
             vocabularyState={data.vocabularyState}
             lastModifiedTime={data.lastModifiedTime}
-            handleSubmit={handleSubmit}  // handleSubmit関数を渡す
+            handleSubmit={handleSubmit}
+            isLoading={isLoading}
             submitButtonText="更新"
         />
     );
