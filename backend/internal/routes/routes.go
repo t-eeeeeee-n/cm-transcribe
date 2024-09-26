@@ -3,6 +3,7 @@ package routes
 import (
 	"cmTranscribe/internal/interface/api"
 	"cmTranscribe/internal/shared/middleware"
+	"github.com/gorilla/mux"
 	"net/http"
 )
 
@@ -24,12 +25,18 @@ func NewRouter(
 	}
 }
 
-func (r *Router) RegisterRoutes() {
-	http.Handle("/api/transcriptions/start", middleware.HttpMethodMiddleware(http.HandlerFunc(r.TranscriptionHandler.HandleStartJob), http.MethodPost))
-	http.Handle("/api/transcriptions/list", middleware.HttpMethodMiddleware(http.HandlerFunc(r.TranscriptionHandler.HandleGetJobList), http.MethodGet))
-	//http.Handle("/api/custom/vocabulary/create", middleware.HttpMethodMiddleware(http.HandlerFunc(r.CustomVocabularyHandler.HandleCreateVocabulary), http.MethodPost))
-	//http.Handle("/api/custom/vocabulary/update", middleware.HttpMethodMiddleware(http.HandlerFunc(r.CustomVocabularyHandler.HandleUpdateVocabulary), http.MethodPut))
-	//http.Handle("/api/custom/vocabulary/get", middleware.HttpMethodMiddleware(http.HandlerFunc(r.CustomVocabularyHandler.HandleGetVocabularyByName), http.MethodGet))
-	http.Handle("/api/custom/vocabulary", http.HandlerFunc(r.CustomVocabularyHandler.HandleVocabulary))
-	http.Handle("/api/s3/upload", middleware.HttpMethodMiddleware(http.HandlerFunc(r.S3UploadHandler.HandleUploadToS3), http.MethodPost))
+func (r *Router) RegisterRoutes() *mux.Router {
+
+	router := mux.NewRouter()
+
+	router.Handle("/api/transcriptions", middleware.HttpMethodMiddleware(http.HandlerFunc(r.TranscriptionHandler.HandleGetJobList), http.MethodGet))
+	router.Handle("/api/transcriptions/start", middleware.HttpMethodMiddleware(http.HandlerFunc(r.TranscriptionHandler.HandleStartJob), http.MethodPost))
+	router.Handle("/api/transcriptions/content", middleware.HttpMethodMiddleware(http.HandlerFunc(r.TranscriptionHandler.HandleGetTranscriptionContent), http.MethodGet))
+	router.Handle("/api/transcriptions/{jobName}", middleware.HttpMethodMiddleware(http.HandlerFunc(r.TranscriptionHandler.HandleGetJob), http.MethodGet))
+	router.Methods(http.MethodPost).Path("/api/custom/vocabulary").Handler(middleware.HttpMethodMiddleware(http.HandlerFunc(r.CustomVocabularyHandler.HandleCreateVocabulary), http.MethodPost))
+	router.Methods(http.MethodPut).Path("/api/custom/vocabulary").Handler(middleware.HttpMethodMiddleware(http.HandlerFunc(r.CustomVocabularyHandler.HandleUpdateVocabulary), http.MethodPut))
+	router.Methods(http.MethodGet).Path("/api/custom/vocabulary").Handler(middleware.HttpMethodMiddleware(http.HandlerFunc(r.CustomVocabularyHandler.HandleGetVocabularyByName), http.MethodGet))
+	//router.Handle("/api/custom/vocabulary", http.HandlerFunc(r.CustomVocabularyHandler.HandleVocabulary))
+	router.Handle("/api/s3/upload", middleware.HttpMethodMiddleware(http.HandlerFunc(r.S3UploadHandler.HandleUploadToS3), http.MethodPost))
+	return router
 }

@@ -68,13 +68,13 @@ backend/
    ```
 
 2. **モック生成ツールのインストール**:
-   テストではgomockを使用してモックを生成しています。まだインストールされていない場合は、以下のコマンドでインストールしてください。
+   テストではgo mockを使用してモックを生成しています。まだインストールされていない場合は、以下のコマンドでインストールしてください。
 
    ```bash
    go install github.com/golang/mock/mockgen@latest
    ``` 
 
-   もしmockgenコマンドが見つからない場合、GOPATH/binがPATHに含まれていない可能性があります。以下のようにしてGOPATH/binをPATHに追加します
+   もしmock genコマンドが見つからない場合、GOPATH/binがPATHに含まれていない可能性があります。以下のようにしてGOPATH/binをPATHに追加します
    ```bash
    export PATH=$PATH:$(go env GOPATH)/bin
    ```

@@ -65,8 +65,33 @@ func NewTranscriptionJobStatusResponse(jobName, transcriptionJobStatus string) *
 	}
 }
 
-// TranscriptionJobResponse カスタムボキャブラリの返却値を表すドメインモデル
+// TranscriptionJobResponse は単一の文字起こしジョブの返却値を表すドメインモデルです
 type TranscriptionJobResponse struct {
+	JobName                string
+	CreationTime           time.Time
+	CompletionTime         *time.Time
+	LanguageCode           string
+	TranscriptionJobStatus string
+	OutputLocation         string
+}
+
+// NewTranscriptionJobResponse は AWS Transcribe のジョブ詳細情報をドメインモデルに変換します
+func NewTranscriptionJobResponse(job *types.TranscriptionJob) *TranscriptionJobResponse {
+	if job == nil {
+		return nil // ジョブがnilの場合はnilを返す
+	}
+	return &TranscriptionJobResponse{
+		JobName:                aws.ToString(job.TranscriptionJobName),
+		CreationTime:           aws.ToTime(job.CreationTime),
+		CompletionTime:         job.CompletionTime,
+		LanguageCode:           string(job.LanguageCode),
+		TranscriptionJobStatus: string(job.TranscriptionJobStatus),
+		OutputLocation:         aws.ToString(job.Transcript.TranscriptFileUri),
+	}
+}
+
+// TranscriptionJobSummaryResponse カスタムボキャブラリの返却値を表すドメインモデル
+type TranscriptionJobSummaryResponse struct {
 	JobName                string
 	CreationTime           time.Time
 	CompletionTime         *time.Time // nil を許容するためポインタに変更
@@ -75,9 +100,9 @@ type TranscriptionJobResponse struct {
 	OutputLocationType     string
 }
 
-// NewTranscriptionJobResponse は AWS Transcribe のジョブ情報をドメインモデルに変換します
-func NewTranscriptionJobResponse(job types.TranscriptionJobSummary) *TranscriptionJobResponse {
-	return &TranscriptionJobResponse{
+// NewTranscriptionJobSummaryResponse は AWS Transcribe のジョブ情報をドメインモデルに変換します
+func NewTranscriptionJobSummaryResponse(job types.TranscriptionJobSummary) *TranscriptionJobSummaryResponse {
+	return &TranscriptionJobSummaryResponse{
 		JobName:                aws.ToString(job.TranscriptionJobName),
 		CreationTime:           aws.ToTime(job.CreationTime),
 		CompletionTime:         job.CompletionTime, // 完了していない場合は nil
@@ -87,19 +112,19 @@ func NewTranscriptionJobResponse(job types.TranscriptionJobSummary) *Transcripti
 	}
 }
 
-// TranscriptionJobsResponse は複数のジョブの返却値を表すドメインモデル
-type TranscriptionJobsResponse struct {
-	Jobs []*TranscriptionJobResponse // TranscriptionJobResponse を配列で保持
+// TranscriptionJobSummariesResponse は複数のジョブの返却値を表すドメインモデル
+type TranscriptionJobSummariesResponse struct {
+	Jobs []*TranscriptionJobSummaryResponse // TranscriptionJobSummaryResponse を配列で保持
 }
 
-// NewTranscriptionJobsResponse は AWS Transcribe のジョブリストをドメインモデルに変換します
-func NewTranscriptionJobsResponse(jobs []types.TranscriptionJobSummary) *TranscriptionJobsResponse {
-	jobResponses := make([]*TranscriptionJobResponse, len(jobs))
+// NewTranscriptionJobSummariesResponse は AWS Transcribe のジョブリストをドメインモデルに変換します
+func NewTranscriptionJobSummariesResponse(jobs []types.TranscriptionJobSummary) *TranscriptionJobSummariesResponse {
+	jobResponses := make([]*TranscriptionJobSummaryResponse, len(jobs))
 	for i, job := range jobs {
-		jobResponses[i] = NewTranscriptionJobResponse(job)
+		jobResponses[i] = NewTranscriptionJobSummaryResponse(job)
 	}
 
-	return &TranscriptionJobsResponse{
+	return &TranscriptionJobSummariesResponse{
 		Jobs: jobResponses,
 	}
 }

@@ -29,4 +29,5 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.22.8 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.26.8 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.30.8 // indirect
+	github.com/gorilla/mux v1.8.1 // indirect
 )

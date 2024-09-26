@@ -18,8 +18,8 @@ type TranscriptionJobStatusResponseDto struct {
 	TranscriptionJobStatus string `json:"jobStatus"`
 }
 
-// TranscriptionJobResponseDto は Transcription ジョブのレスポンスを表すDTOです
-type TranscriptionJobResponseDto struct {
+// TranscriptionJobSummaryDto GetTranscriptionJobList用のResponseDTO
+type TranscriptionJobSummaryDto struct {
 	JobName                string `json:"jobName"`
 	CreationTime           string `json:"creationTime"`
 	CompletionTime         string `json:"completionTime,omitempty"` // nilを許容し、nilの場合は省略される
@@ -28,8 +28,8 @@ type TranscriptionJobResponseDto struct {
 	OutputLocationType     string `json:"outputLocationType"`
 }
 
-// Validate メソッドは、TranscriptionJobResponseDto のバリデーションを行います
-func (r *TranscriptionJobResponseDto) Validate() error {
+// Validate メソッドは、TranscriptionJobSummaryDto のバリデーションを行います
+func (r *TranscriptionJobSummaryDto) Validate() error {
 	if r.JobName == "" {
 		return errors.New("JobName is required")
 	}
@@ -43,8 +43,9 @@ func (r *TranscriptionJobResponseDto) Validate() error {
 	return nil
 }
 
+// TranscriptionJobsResponseDto GetTranscriptionJobList用のResponseDTO
 type TranscriptionJobsResponseDto struct {
-	Jobs []TranscriptionJobResponseDto `json:"jobs"`
+	Jobs []TranscriptionJobSummaryDto `json:"jobs"`
 }
 
 // Validate メソッドは、TranscriptionJobsResponseDto のバリデーションを行います
@@ -58,4 +59,41 @@ func (r *TranscriptionJobsResponseDto) Validate() error {
 		}
 	}
 	return nil
+}
+
+// TranscriptionJobResponseDto GetTranscriptionJob用のResponseDTO
+type TranscriptionJobResponseDto struct {
+	JobName                string `json:"jobName"`
+	CreationTime           string `json:"creationTime"`
+	CompletionTime         string `json:"completionTime,omitempty"`
+	LanguageCode           string `json:"languageCode"`
+	TranscriptionJobStatus string `json:"transcriptionJobStatus"`
+	TranscriptFileUri      string `json:"transcriptFileUri"` // 実際の出力ファイルのURI
+}
+
+// Validate メソッドは、TranscriptionJobDetailResponseDto のバリデーションを行います
+func (r *TranscriptionJobResponseDto) Validate() error {
+	if r.JobName == "" {
+		return errors.New("JobName is required")
+	}
+	if r.LanguageCode == "" {
+		return errors.New("LanguageCode is required")
+	}
+	if r.TranscriptionJobStatus == "" {
+		return errors.New("TranscriptionJobStatus is required")
+	}
+	return nil
+}
+
+// TranscriptionContentResponseDto is a struct that holds the simplified transcription data
+type TranscriptionContentResponseDto struct {
+	Transcript string                 `json:"transcript"` // 文字起こしのテキスト
+	Confidence []WordConfidenceDto    `json:"confidence"` // 各単語の信頼度
+	RawData    map[string]interface{} `json:"rawData"`    // 元のJSONデータ全体
+}
+
+// WordConfidenceDto holds each word with its confidence score
+type WordConfidenceDto struct {
+	Word       string `json:"word"`
+	Confidence string `json:"confidence"`
 }

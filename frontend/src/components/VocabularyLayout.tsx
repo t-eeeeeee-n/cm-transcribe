@@ -4,7 +4,6 @@ import VocabularyForm from "@/components/VocabularyForm";
 import DictionarySettings from "@/components/DictionarySettings";
 import { Vocabulary } from "@/types/Vocabulary";
 import { Toaster } from 'react-hot-toast';
-import VocabularyStatus from "@/components/VocabularyStatus";
 import LoadingSpinner from "@/components/LoadingSpinner";  // Toasterのインポート
 
 interface VocabularyLayoutProps {

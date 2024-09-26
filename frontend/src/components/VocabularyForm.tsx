@@ -2,7 +2,6 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import VocabularyStatus from "@/components/VocabularyStatus";
 import VocabularyLastModifiedTime from "@/components/VocabularyLastModifiedTime";
 import LanguageSelect from "@/components/LanguageSelect";

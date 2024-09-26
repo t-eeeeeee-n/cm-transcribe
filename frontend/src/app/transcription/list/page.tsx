@@ -3,7 +3,7 @@ import Client from './client';
 // Transcription Jobsデータをサーバーサイドで取得する関数
 async function fetchTranscriptionJobs() {
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/transcriptions/list`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/transcriptions`, {
             headers: {
                 'Content-Type': 'application/json',
             },

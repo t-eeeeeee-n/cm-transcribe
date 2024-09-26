@@ -6,6 +6,7 @@ import (
 	"cmTranscribe/internal/shared/utils"
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"strings"
@@ -58,4 +59,46 @@ func (h *TranscriptionJobHandler) HandleGetJobList(w http.ResponseWriter, r *htt
 
 	// JSON形式でレスポンスを返す
 	utils.RespondWithJSON(w, http.StatusOK, jobList)
+}
+
+// HandleGetJob 特定の文字起こしジョブのAPIリクエストを処理します。
+func (h *TranscriptionJobHandler) HandleGetJob(w http.ResponseWriter, r *http.Request) {
+	// パスパラメータからジョブ名を取得
+	vars := mux.Vars(r)
+	jobName := vars["jobName"]
+
+	if jobName == "" {
+		utils.RespondWithError(w, http.StatusBadRequest, "jobName is required")
+		return
+	}
+
+	// サービスを使って特定のジョブを取得
+	job, err := h.Service.GetTranscriptionJob(r.Context(), jobName)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to get transcription job")
+		return
+	}
+
+	// JSON形式でレスポンスを返す
+	utils.RespondWithJSON(w, http.StatusOK, job)
+}
+
+// HandleGetTranscriptionContent S3から文字起こし内容を取得し、DTOに詰めて返すエンドポイントハンドラ
+func (h *TranscriptionJobHandler) HandleGetTranscriptionContent(w http.ResponseWriter, r *http.Request) {
+	// クエリパラメータからjobNameを取得
+	jobName := r.URL.Query().Get("jobName")
+	if jobName == "" {
+		utils.RespondWithError(w, http.StatusBadRequest, "jobName is required")
+		return
+	}
+
+	// サービスを使って文字起こし内容を取得
+	contentDto, err := h.Service.GetTranscriptionContent(r.Context(), jobName)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to get transcription content")
+		return
+	}
+
+	// 文字起こし内容をJSON形式で返す
+	utils.RespondWithJSON(w, http.StatusOK, contentDto)
 }

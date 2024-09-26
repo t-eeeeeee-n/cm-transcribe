@@ -24,7 +24,7 @@ async function sendToBackend(method: string, body: any) {
         // custom vocabulary nameが重複している場合、409ステータスコードを処理
         if (response.status === 409) {
             return NextResponse.json({
-                message: 'Custom vocablary name already exists',
+                message: 'Custom vocabulary name already exists',
             }, { status: 409 });
         }
 

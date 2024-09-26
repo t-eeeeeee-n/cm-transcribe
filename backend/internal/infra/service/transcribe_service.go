@@ -2,6 +2,7 @@ package service
 
 import (
 	"cmTranscribe/internal/domain/model"
+	appConfig "cmTranscribe/internal/infra/config"
 	"context"
 	"errors"
 	"fmt"
@@ -36,6 +37,7 @@ func NewTranscribeService(ctx context.Context, region string) (*TranscribeServic
 
 // StartTranscriptionJob インターフェースの実装
 func (t *TranscribeService) StartTranscriptionJob(ctx context.Context, input *model.TranscriptionJob) (*model.TranscriptionJobStatusResponse, error) {
+	bucketName := appConfig.AppConfig.S3BucketName
 	// TranscriptionJobの入力を作成
 	transcriptionInput := &transcribe.StartTranscriptionJobInput{
 		TranscriptionJobName: aws.String(input.JobName),
@@ -43,6 +45,7 @@ func (t *TranscribeService) StartTranscriptionJob(ctx context.Context, input *mo
 		Media: &types.Media{
 			MediaFileUri: aws.String(input.MediaFileURI),
 		},
+		OutputBucketName: aws.String(bucketName),
 	}
 
 	// カスタムボキャブラリの指定がある場合
@@ -71,8 +74,32 @@ func (t *TranscribeService) StartTranscriptionJob(ctx context.Context, input *mo
 	), nil
 }
 
+// GetTranscriptionJob retrieves a single transcription job by its job name from AWS Transcribe.
+func (t *TranscribeService) GetTranscriptionJob(ctx context.Context, jobName string) (*model.TranscriptionJobResponse, error) {
+	// Create the input request with the provided job name.
+	input := &transcribe.GetTranscriptionJobInput{
+		TranscriptionJobName: aws.String(jobName),
+	}
+
+	// Call AWS Transcribes GetTranscriptionJob API.
+	output, err := t.client.GetTranscriptionJob(ctx, input)
+	if err != nil {
+		// Handle API errors with logging and appropriate error messages.
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			log.Printf("Failed to get transcription job: %s (code: %s)", apiErr.ErrorMessage(), apiErr.ErrorCode())
+		} else {
+			log.Printf("Failed to get transcription job: %v", err)
+		}
+		return nil, fmt.Errorf("failed to get transcription job: %v", err)
+	}
+
+	// Convert the AWS response to a domain model using a factory method.
+	return model.NewTranscriptionJobResponse(output.TranscriptionJob), nil
+}
+
 // GetTranscriptionJobList retrieves the list of transcription jobs from AWS Transcribe.
-func (t *TranscribeService) GetTranscriptionJobList(ctx context.Context) (*model.TranscriptionJobsResponse, error) {
+func (t *TranscribeService) GetTranscriptionJobList(ctx context.Context) (*model.TranscriptionJobSummariesResponse, error) {
 	// Create the request input for listing transcription jobs.
 	input := &transcribe.ListTranscriptionJobsInput{}
 
@@ -90,5 +117,5 @@ func (t *TranscribeService) GetTranscriptionJobList(ctx context.Context) (*model
 	}
 
 	// Use the factory method to convert the AWS response to the domain model.
-	return model.NewTranscriptionJobsResponse(output.TranscriptionJobSummaries), nil
+	return model.NewTranscriptionJobSummariesResponse(output.TranscriptionJobSummaries), nil
 }

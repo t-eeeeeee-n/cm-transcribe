@@ -52,7 +52,7 @@ func NewAppContainer(ctx context.Context) (*AppContainer, error) {
 	s3StorageService := domainService.NewS3StorageService(s3StorageInfraService)
 
 	// アプリケーションサービスの初期化
-	transcriptionJobAppService := applicationService.NewTranscriptionJobService(transcriptionRepo, transcriptionJobService)
+	transcriptionJobAppService := applicationService.NewTranscriptionJobService(transcriptionRepo, transcriptionJobService, s3StorageService)
 	customVocabularyAppService := applicationService.NewCustomVocabularyService(customVocabularyService, fileService, s3StorageService)
 	s3UploadAppService := applicationService.NewS3UploadService(s3StorageService)
 

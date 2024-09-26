@@ -1,5 +1,5 @@
 import React from 'react';
-import { AiOutlineCheckCircle, AiOutlineClockCircle, AiOutlineCloseCircle, AiOutlineMinusCircle } from 'react-icons/ai';
+import { AiOutlineCheckCircle, AiOutlineClockCircle, AiOutlineCloseCircle } from 'react-icons/ai';
 import { FaSpinner } from 'react-icons/fa'; // IN_PROGRESS 用のアイコン
 
 interface StatusBadgeProps {

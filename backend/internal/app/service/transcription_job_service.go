@@ -7,6 +7,7 @@ import (
 	"cmTranscribe/internal/domain/service"
 	"cmTranscribe/internal/shared/validator"
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -15,13 +16,19 @@ import (
 type TranscriptionJobService struct {
 	Repo                    repository.TranscriptionJobRepository
 	TranscriptionJobService service.TranscriptionJobService
+	S3StorageService        service.S3StorageService
 }
 
 // NewTranscriptionJobService 新しい TranscriptionJobService を作成します。
-func NewTranscriptionJobService(repo repository.TranscriptionJobRepository, jobService service.TranscriptionJobService) *TranscriptionJobService {
+func NewTranscriptionJobService(
+	repo repository.TranscriptionJobRepository,
+	jobService service.TranscriptionJobService,
+	s3StorageService service.S3StorageService,
+) *TranscriptionJobService {
 	return &TranscriptionJobService{
 		Repo:                    repo,
 		TranscriptionJobService: jobService,
+		S3StorageService:        s3StorageService,
 	}
 }
 
@@ -74,10 +81,10 @@ func (s *TranscriptionJobService) GetTranscriptionJobList(ctx context.Context) (
 	}
 
 	// DTOに変換する
-	var dtoJobs []dto.TranscriptionJobResponseDto
+	var dtoJobs []dto.TranscriptionJobSummaryDto
 	for _, job := range jobs.Jobs { // jobs.Jobs はドメインモデル内のジョブリスト
 		// CreationTimeとCompletionTimeをフォーマットしてDTOにセット
-		dtoJob := dto.TranscriptionJobResponseDto{
+		dtoJob := dto.TranscriptionJobSummaryDto{
 			JobName:                job.JobName,
 			CreationTime:           job.CreationTime.In(jst).Format(timeFormat),
 			CompletionTime:         formatCompletionTime(job.CompletionTime, jst),
@@ -100,10 +107,92 @@ func (s *TranscriptionJobService) GetTranscriptionJobList(ctx context.Context) (
 	return &response, nil
 }
 
+// GetTranscriptionJob AWS Transcribeから特定のジョブを取得します。
+func (s *TranscriptionJobService) GetTranscriptionJob(ctx context.Context, jobName string) (*dto.TranscriptionJobResponseDto, error) {
+	// 日本時間のLocationを取得
+	jst, err := time.LoadLocation("Asia/Tokyo")
+	if err != nil {
+		return nil, fmt.Errorf("failed to load JST location: %v", err)
+	}
+
+	// AWS Transcribeから特定のジョブを取得
+	job, err := s.TranscriptionJobService.GetTranscriptionJob(ctx, jobName) // ドメイン層のメソッドを呼び出し
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transcription job: %v", err)
+	}
+
+	// DTOに変換する
+	dtoJob := dto.TranscriptionJobResponseDto{
+		JobName:                job.JobName,
+		CreationTime:           job.CreationTime.In(jst).Format(timeFormat),   // 日本時間に変換
+		CompletionTime:         formatCompletionTime(job.CompletionTime, jst), // 完了時間も日本時間に変換
+		LanguageCode:           job.LanguageCode,
+		TranscriptionJobStatus: job.TranscriptionJobStatus,
+		TranscriptFileUri:      job.OutputLocation, // 出力ファイルのURLをセット
+	}
+
+	// DTOのバリデーションを実行
+	if err := dtoJob.Validate(); err != nil {
+		return nil, fmt.Errorf("validation error: %v", err)
+	}
+
+	// DTOを返す
+	return &dtoJob, nil
+}
+
 // CompletionTimeのフォーマット（nilチェック付き、JSTに変換）
 func formatCompletionTime(completionTime *time.Time, loc *time.Location) string {
 	if completionTime != nil {
 		return completionTime.In(loc).Format(timeFormat) // 日本時間に変換してフォーマット
 	}
 	return "" // nilの場合は空文字を返す
+}
+
+// GetTranscriptionContent refactors transcription content for frontend
+func (s *TranscriptionJobService) GetTranscriptionContent(ctx context.Context, transcriptFileUri string) (*dto.TranscriptionContentResponseDto, error) {
+	// S3ストレージサービスを使って署名付きURLを生成
+	signedURL, err := s.S3StorageService.GeneratePresignedURL(ctx, transcriptFileUri)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate signed URL: %v", err)
+	}
+
+	// 署名付きURLを使って文字起こしの内容を取得
+	content, err := s.S3StorageService.GetTranscriptionContent(ctx, signedURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transcription content: %v", err)
+	}
+
+	// JSONをパースして、全体のデータを取得
+	var transcribeResult map[string]interface{}
+	err = json.Unmarshal([]byte(content), &transcribeResult)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse transcription content: %v", err)
+	}
+
+	// transcriptsのテキストを取得
+	transcripts := transcribeResult["results"].(map[string]interface{})["transcripts"].([]interface{})
+	transcriptText := transcripts[0].(map[string]interface{})["transcript"].(string)
+
+	// 各単語の信頼度を取得
+	items := transcribeResult["results"].(map[string]interface{})["items"].([]interface{})
+	var confidenceList []dto.WordConfidenceDto
+
+	for _, item := range items {
+		itemMap := item.(map[string]interface{})
+		if itemMap["type"] == "pronunciation" {
+			alternatives := itemMap["alternatives"].([]interface{})
+			alt := alternatives[0].(map[string]interface{})
+			confidenceList = append(confidenceList, dto.WordConfidenceDto{
+				Word:       alt["content"].(string),
+				Confidence: alt["confidence"].(string),
+			})
+		}
+	}
+
+	// 最終レスポンスを返す (パースしたデータと元のデータ全体の両方を含む)
+	return &dto.TranscriptionContentResponseDto{
+		Transcript: transcriptText,
+		Confidence: confidenceList,
+		RawData:    transcribeResult, // 元のデータをそのまま保持
+	}, nil
 }

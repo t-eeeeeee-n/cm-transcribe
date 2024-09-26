@@ -163,13 +163,13 @@ curl -X GET "http://localhost:8080/api/custom/vocabulary?name=MyVocabulary01" \
   - **500 Internal Server Error**:  サーバー内部のエラーやAWSへのリクエストが失敗した場合。
 
 
-### 5. `/api/transcriptions/list` [GET]
+### 5. `/api/transcriptions` [GET]
 
 - **説明**: 文字起こしジョブの一覧を取得します。Amazon Transcribeで実行したジョブのリストを返します。
 - **リクエスト例**:
 
 ```bash
-curl -X GET "http://localhost:8080/api/transcriptions/list" \
+curl -X GET "http://localhost:8080/api/transcriptions" \
 -H "Content-Type: application/json"
 ```
 
@@ -199,4 +199,37 @@ curl -X GET "http://localhost:8080/api/transcriptions/list" \
 ```
 
 - **エラーレスポンス**:
+  - **500 Internal Server Error**:  サーバー内部のエラーやAWSへのリクエストが失敗した場合。
+
+
+### 6. `/api/transcriptions/{jobName}` [GET]
+
+- **説明**: 指定された jobName に基づいて、特定の文字起こしジョブの詳細情報を取得します。Amazon Transcribeで実行したジョブのステータスやその他の詳細を返します。
+- **リクエスト例**:
+
+```bash
+curl -X GET "http://localhost:8080/api/transcriptions/transcription-job-id-1" \
+-H "Content-Type: application/json"
+```
+
+- **パスパラメータ**:
+  - `jobName`: 取得したいジョブの名前（文字列）
+
+
+- **レスポンス**:
+
+```bash
+{
+  "jobName": "transcription-job-id-1",
+  "creationTime": "2023-09-13T12:00:00Z",
+  "completionTime": "2023-09-13T13:00:00Z",
+  "languageCode": "ja-JP",
+  "transcriptionJobStatus": "COMPLETED",
+  "transcriptFileUri": "https://s3-bucket-url/transcription-job-id-1"
+}
+```
+
+- **エラーレスポンス**:
+  - **400 Bad Request**:  `jobName` が指定されていない場合
+  - **404 Not Found**:  指定した `jobName` のジョブが存在しない場合
   - **500 Internal Server Error**:  サーバー内部のエラーやAWSへのリクエストが失敗した場合。

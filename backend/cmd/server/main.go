@@ -36,17 +36,19 @@ func main() {
 	s3UploadHandler := api.NewS3UploadHandler(appContainer.S3UploadService)
 
 	// ルーターの作成とルーティングの登録
-	router := routes.NewRouter(
+	r := routes.NewRouter(
 		transcriptionHandler,
 		customVocabularyHandler,
 		s3UploadHandler,
 	)
-	router.RegisterRoutes()
+
+	// ルートの登録
+	router := r.RegisterRoutes() // ルーティングを取得
 
 	// HTTPサーバーの作成
 	srv := &http.Server{
 		Addr:    ":" + config.AppConfig.Port,
-		Handler: nil, // デフォルトで `http.DefaultServeMux` を使用
+		Handler: router, // ルーターを設定
 	}
 
 	// サーバーの起動を別の goroutine で行う
